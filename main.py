@@ -7,22 +7,40 @@ from collections import OrderedDict
 
 import adbc_driver_postgresql.dbapi
 
-
+_query = None
 
 def get_connection_dsn():
     return os.getenv("DB_DSN", "postgresql://postgres@127.0.0.1/postgres")
 
+
 def write_batch(name_types, schema):
     batch = pa.record_batch(
         [
-            pa.array(
-                name_types[k]["values"], type=name_types[k]["type"]
-            )
+            pa.array(name_types[k]["values"], type=name_types[k]["type"])
             for k in name_types.keys()
         ],
         schema,
     )
     writer.write_batch(batch)
+
+def get_query():
+    global _query
+    if _query:
+        return _query
+    with open("query.sql", "r", encoding="utf-8") as f:
+        _query = f.read()
+        return _query
+    
+
+def get_query_with_limit():
+    query = get_query()
+    if "limit" not in query:
+        return query + " limit 1"
+    else:
+        lidx = query.index("limit") + 6
+        q = query[:lidx] + '1'
+        print(q)
+        return q
 
 if __name__ == "__main__":
     load_dotenv()
@@ -31,13 +49,7 @@ if __name__ == "__main__":
     with adbc_driver_postgresql.dbapi.connect(get_connection_dsn()) as conn:
         print(0)
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                            SELECT p.id, p.departureport, p.arrivalport, s.depdate, s.id as sid, p.price
-                                FROM passenger p LEFT JOIN sailing s on p.sailing_fk = s.id
-                                limit 1
-                    """
-            )
+            cur.execute(get_query_with_limit())
             name_types = OrderedDict(
                 {x[0]: {"type": x[1], "values": []} for x in cur.description}
             )
@@ -53,14 +65,7 @@ if __name__ == "__main__":
         with psycopg.connect(get_connection_dsn()) as conn:
             with conn.cursor("passenger-cursor-enum") as cur:
                 cur.itersize = batch_size
-                cur.execute(
-                    """
-                            SELECT p.id, p.departureport, p.arrivalport, s.depdate, s.id, p.price
-                                FROM passenger p LEFT JOIN sailing s on p.sailing_fk = s.id
-                                order by p.id
-                                limit 1000000
-                    """
-                )
+                cur.execute(get_query())
 
                 print("Query executed...")
                 for idx, record in enumerate(cur):
