@@ -1,0 +1,6 @@
+adbc-driver-postgresql==0.7.0
+black==23.9.1
+psycopg==3.1.12
+psycopg-binary==3.1.12
+pyarrow==13.0.0
+python-dotenv==1.0.0
