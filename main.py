@@ -7,15 +7,27 @@ from collections import OrderedDict
 
 import adbc_driver_postgresql.dbapi
 
-load_dotenv()
-BATCH_SIZE = 10000
 
 
 def get_connection_dsn():
     return os.getenv("DB_DSN", "postgresql://postgres@127.0.0.1/postgres")
 
+def write_batch(name_types, schema):
+    batch = pa.record_batch(
+        [
+            pa.array(
+                name_types[k]["values"], type=name_types[k]["type"]
+            )
+            for k in name_types.keys()
+        ],
+        schema,
+    )
+    writer.write_batch(batch)
 
 if __name__ == "__main__":
+    load_dotenv()
+    batch_size = os.getenv("BATCH_SIZE", 10000)
+
     with adbc_driver_postgresql.dbapi.connect(get_connection_dsn()) as conn:
         print(0)
         with conn.cursor() as cur:
@@ -40,7 +52,7 @@ if __name__ == "__main__":
     ) as writer:
         with psycopg.connect(get_connection_dsn()) as conn:
             with conn.cursor("passenger-cursor-enum") as cur:
-                cur.itersize = BATCH_SIZE
+                cur.itersize = batch_size
                 cur.execute(
                     """
                             SELECT p.id, p.departureport, p.arrivalport, s.depdate, s.id, p.price
@@ -55,19 +67,12 @@ if __name__ == "__main__":
                     for ridx, value in enumerate(record):
                         name_types[name_type_keys[ridx]]["values"].append(value)
 
-                    if idx % BATCH_SIZE == 0:
-                        print("Writing batch {}...".format(idx // BATCH_SIZE))
+                    if idx % batch_size == 0:
+                        print("Writing batch {}...".format(idx // batch_size))
+                        write_batch(name_types, schema)
 
-                        batch = pa.record_batch(
-                            [
-                                pa.array(
-                                    name_types[x]["values"], type=name_types[x]["type"]
-                                )
-                                for x in name_type_keys
-                            ],
-                            schema,
-                        )
-                        writer.write_batch(batch)
                         id = []
                         for x in name_type_keys:
                             name_types[x]["values"] = []
+
+                write_batch(name_types, schema)
