@@ -9,6 +9,7 @@ import adbc_driver_postgresql.dbapi
 
 _query = None
 
+
 def get_connection_dsn():
     return os.getenv("DB_DSN", "postgresql://postgres@127.0.0.1/postgres")
 
@@ -23,6 +24,7 @@ def write_batch(name_types, schema):
     )
     writer.write_batch(batch)
 
+
 def get_query():
     global _query
     if _query:
@@ -30,7 +32,7 @@ def get_query():
     with open("query.sql", "r", encoding="utf-8") as f:
         _query = f.read()
         return _query
-    
+
 
 def get_query_with_limit():
     query = get_query()
@@ -38,16 +40,15 @@ def get_query_with_limit():
         return query + " limit 1"
     else:
         lidx = query.index("limit") + 6
-        q = query[:lidx] + '1'
-        print(q)
+        q = query[:lidx] + "1"
         return q
+
 
 if __name__ == "__main__":
     load_dotenv()
-    batch_size = os.getenv("BATCH_SIZE", 10000)
+    batch_size = int(os.getenv("BATCH_SIZE", "10000"))
 
     with adbc_driver_postgresql.dbapi.connect(get_connection_dsn()) as conn:
-        print(0)
         with conn.cursor() as cur:
             cur.execute(get_query_with_limit())
             name_types = OrderedDict(
@@ -58,7 +59,7 @@ if __name__ == "__main__":
 
     schema = pa.schema([(x[0], x[1]["type"]) for x in name_types.items()])
     print(schema)
-
+    
     with pq.ParquetWriter(
         "bigfile.parquet", schema=schema, compression="gzip"
     ) as writer:
