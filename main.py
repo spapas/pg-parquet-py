@@ -5,10 +5,23 @@ import psycopg
 from dotenv import load_dotenv
 import os
 from collections import OrderedDict
-
+import logging
 import adbc_driver_postgresql.dbapi
+import time
 
 _query = None
+
+
+tt = time.time()
+gt = time.time()
+
+
+def debug_w_time(msg):
+    global tt
+    logging.debug(
+        f"{msg} ~~~ time: {time.time() - tt :.2f}, accumulated time: {time.time() - gt :.2f} ~~~"
+    )
+    tt = time.time()
 
 
 def get_connection_dsn():
@@ -46,13 +59,25 @@ def get_query_with_limit(query_file):
 
 
 if __name__ == "__main__":
+    load_dotenv()
+
+    loglevel = os.getenv("LOGLEVEL", "INFO")
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s %(message)s",
+        level=getattr(logging, loglevel),
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    debug_w_time("Starting with debug")
+
     if len(sys.argv) != 2:
         print("Usage: python main.py <query_file>")
         sys.exit(1)
     query_file = sys.argv[1]
-    load_dotenv()
-    batch_size = int(os.getenv("BATCH_SIZE", "10000"))
 
+    batch_size = int(os.getenv("BATCH_SIZE", "10000"))
+    logging.info("Starting with batch size of {}".format(batch_size))
+
+    debug_w_time("Trying to connect to db and read query column types")
     with adbc_driver_postgresql.dbapi.connect(get_connection_dsn()) as conn:
         with conn.cursor() as cur:
             cur.execute(get_query_with_limit(query_file))
@@ -63,23 +88,24 @@ if __name__ == "__main__":
     name_type_keys = list(name_types.keys())
 
     schema = pa.schema([(x[0], x[1]["type"]) for x in name_types.items()])
-    print(schema)
+    debug_w_time(schema)
 
+    compression = os.getenv("COMPRESSION", "NONE")
     with pq.ParquetWriter(
-        "output.parquet", schema=schema, compression="gzip"
+        "output.parquet", schema=schema, compression=compression
     ) as writer:
         with psycopg.connect(get_connection_dsn()) as conn:
-            with conn.cursor("passenger-cursor-enum") as cur:
+            with conn.cursor("pg-parquet-cursor") as cur:
                 cur.itersize = batch_size
                 cur.execute(get_query(query_file))
 
-                print("Query executed...")
+                debug_w_time("Query executed...")
                 for idx, record in enumerate(cur):
                     for ridx, value in enumerate(record):
                         name_types[name_type_keys[ridx]]["values"].append(value)
 
                     if idx % batch_size == 0:
-                        print("Writing batch {}...".format(idx // batch_size))
+                        debug_w_time("Writing batch {}...".format(idx // batch_size))
                         write_batch(name_types, schema)
 
                         id = []
@@ -87,3 +113,5 @@ if __name__ == "__main__":
                             name_types[x]["values"] = []
 
                 write_batch(name_types, schema)
+
+    logging.info("DONE!")

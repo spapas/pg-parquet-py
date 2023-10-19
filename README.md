@@ -30,3 +30,8 @@ or in windows
 Copy over `.env.template` to `.env` and setup your database dsn and any other options you want. You can also use environment variables instead of the `.env` file.
 
 Then run `python main.py query_file.sql` where the query_file should contain the SQL query whose contents you want to export to the parquet file. See the file `query.sql` for an example. The output file will be named `output.parquet` by default.
+
+## Configuration
+
+You can set the LOGLEVEL to DEBUG to see more messages including timing or to ERROR to see only error messages. The default is INFO. You can also set the COMPRESSION to SNAPPY, GZIP, BROTLI, LZ4 or ZSTD. The default is NONE. The BATCH_SIZE is the number of rows to fetch at a time from the database. The default is 10000. Finally, the DB_DSN must have the format `DB_DSN=postgresql://user:pass@host/db` with correct values for user, pass, host and db name.
+
