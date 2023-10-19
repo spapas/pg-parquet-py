@@ -53,5 +53,5 @@ For example run something `duckdb -c "select count(*) from output.parquet"`.
 
 To give you an example of the timing differences: I had a table with ~ 150M rows. It took ~ 45 minutes to create the parquet file for this table resulting in an 1.3GB file (with SNAPPY compression). Then I could run aggregates for this data (group by, sum, count, etc) in seconds. 
 
-The same aggregates on the original table took hours. To consider the difference, to run a count(*) on the original table needs more than 10 minutes(!). For a simple group by two columns and a count it takes like 18 minutes. The count(*) query for the parquet file takes half a second and the group by query takes 3 seconds. 
+The same aggregates on the original table took hours. To consider the difference, to run a `count(*)` on the original table needs more than **10 minutes**(!). For a simple group by two columns and a count it takes **like 18 minutes**. The `count(*)` query for the parquet file takes **half a second** and the group by query takes **3 seconds**. 
 
