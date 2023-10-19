@@ -1,13 +1,11 @@
-import sys
+import sys, os, time, logging
 import pyarrow as pa
 import pyarrow.parquet as pq
 import psycopg
 from dotenv import load_dotenv
-import os
 from collections import OrderedDict
-import logging
 import adbc_driver_postgresql.dbapi
-import time
+
 
 _query = None
 
