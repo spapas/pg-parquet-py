@@ -10,4 +10,3 @@ SELECT p.id,
     LEFT JOIN port dp ON dp.portcode = p.departureport
     LEFT JOIN port ap ON ap.portcode = p.arrivalport
     LEFT JOIN "Ship" sh ON sh.shipcode = s.shipcode
-    order by p.id

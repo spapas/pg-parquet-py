@@ -29,3 +29,4 @@ or in windows
 
 Copy over `.env.template` to `.env` and setup your database dsn and any other options you want. You can also use environment variables instead of the `.env` file.
 
+Then run `python main.py query_file.sql` where the query_file should contain the SQL query whose contents you want to export to the parquet file. See the file `query.sql` for an example. The output file will be named `output.parquet` by default.

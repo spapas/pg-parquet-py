@@ -1,3 +1,4 @@
+import sys
 import pyarrow as pa
 import pyarrow.parquet as pq
 import psycopg
@@ -25,17 +26,17 @@ def write_batch(name_types, schema):
     writer.write_batch(batch)
 
 
-def get_query():
+def get_query(query_file):
     global _query
     if _query:
         return _query
-    with open("query.sql", "r", encoding="utf-8") as f:
+    with open(query_file, "r", encoding="utf-8") as f:
         _query = f.read()
         return _query
 
 
-def get_query_with_limit():
-    query = get_query()
+def get_query_with_limit(query_file):
+    query = get_query(query_file)
     if "limit" not in query:
         return query + " limit 1"
     else:
@@ -45,12 +46,16 @@ def get_query_with_limit():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <query_file>")
+        sys.exit(1)
+    query_file = sys.argv[1]
     load_dotenv()
     batch_size = int(os.getenv("BATCH_SIZE", "10000"))
 
     with adbc_driver_postgresql.dbapi.connect(get_connection_dsn()) as conn:
         with conn.cursor() as cur:
-            cur.execute(get_query_with_limit())
+            cur.execute(get_query_with_limit(query_file))
             name_types = OrderedDict(
                 {x[0]: {"type": x[1], "values": []} for x in cur.description}
             )
@@ -59,14 +64,14 @@ if __name__ == "__main__":
 
     schema = pa.schema([(x[0], x[1]["type"]) for x in name_types.items()])
     print(schema)
-    
+
     with pq.ParquetWriter(
-        "bigfile.parquet", schema=schema, compression="gzip"
+        "output.parquet", schema=schema, compression="gzip"
     ) as writer:
         with psycopg.connect(get_connection_dsn()) as conn:
             with conn.cursor("passenger-cursor-enum") as cur:
                 cur.itersize = batch_size
-                cur.execute(get_query())
+                cur.execute(get_query(query_file))
 
                 print("Query executed...")
                 for idx, record in enumerate(cur):
