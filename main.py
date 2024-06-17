@@ -67,10 +67,11 @@ if __name__ == "__main__":
     )
     debug_w_time("Starting with debug")
 
-    if len(sys.argv) != 2:
-        print("Usage: python main.py <query_file>")
+    if len(sys.argv) != 3:
+        print("Usage: python main.py <query_file> <output_file>")
         sys.exit(1)
     query_file = sys.argv[1]
+    output_file = sys.argv[2]
 
     batch_size = int(os.getenv("BATCH_SIZE", "10000"))
     logging.info("Starting with batch size of {}".format(batch_size))
@@ -90,7 +91,7 @@ if __name__ == "__main__":
 
     compression = os.getenv("COMPRESSION", "NONE")
     with pq.ParquetWriter(
-        "output.parquet", schema=schema, compression=compression
+        output_file, schema=schema, compression=compression
     ) as writer:
         with psycopg.connect(get_connection_dsn()) as conn:
             with conn.cursor("pg-parquet-cursor") as cur:
