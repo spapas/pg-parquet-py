@@ -42,7 +42,7 @@ Then run `python main.py query_file.sql` where the query_file should contain the
 
 ## Configuration
 
-You can set the `LOGLEVEL` to `DEBUG` to see more messages including timings or to `ERROR` to see only error messages. The default is `INFO`. You can also set the `COMPRESSION` to `SNAPPY`, `GZIP`, `BROTLI`, `LZ4` or `ZSTD`. The default is `NONE`. The `BATCH_SIZE` is the number of rows to fetch at a time from the database. The default is `10000`. Finally, the `DB_DSN` must have the format `DB_DSN=postgresql://user:pass@host/db` with correct values for user, pass, host and db name.
+You can set the `LOGLEVEL` to `DEBUG` to see more messages including timings or to `ERROR` to see only error messages. The default is `INFO`. You can also set the `COMPRESSION` to `SNAPPY` (most common), `GZIP`, `BROTLI`, `LZ4` or `ZSTD`. The default is `NONE`. The `BATCH_SIZE` is the number of rows to fetch at a time from the database. The default is `10000`. Finally, the `DB_DSN` must have the format `DB_DSN=postgresql://user:pass@host/db` with correct values for user, pass, host and db name.
 
 ## Why?
 
