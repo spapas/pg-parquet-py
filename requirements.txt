@@ -1,5 +1,6 @@
 adbc-driver-postgresql==1.0.0
 black==24.4.2
+duckdb==1.0.0
 psycopg==3.1.19
 psycopg-binary==3.1.19
 pyarrow==16.1.0

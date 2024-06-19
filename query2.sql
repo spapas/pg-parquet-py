@@ -5,9 +5,9 @@ SELECT p.id,
     ap.portname as port_to,
     s.depdate, s.firstportdepdate,
     s.id as sid, p.price,
-    sh.name as shipname, sh.shipcode, p.passengername,
+    sh.name as shipname, sh.shipcode, p.licnumber,
     p.discount, p.cancelticket, p.confirm
-    FROM passenger p
+    FROM vehicle p
     LEFT JOIN sailing s on p.sailing_fk = s.id
     LEFT JOIN port dp ON dp.portcode = p.departureport
     LEFT JOIN port ap ON ap.portcode = p.arrivalport
