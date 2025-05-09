@@ -27,6 +27,7 @@ def get_connection_dsn():
 
 
 def write_batch(writer, name_types, schema):
+    # debug_w_time(str(name_types))
     batch = pa.record_batch(
         [
             pa.array(name_types[k]["values"], type=name_types[k]["type"])
@@ -48,14 +49,14 @@ def get_query(query_file):
 
 def get_query_with_limit(query_file):
     query = get_query(query_file)
-    # remove everything after where
-    if "WHERE" in query:
-        query = query[: query.index("WHERE")]
 
-    if "limit" not in query:
+    querylines = query.splitlines()
+    query = "\n".join([x for x in querylines if '%s' not in x])
+
+    if "limit" not in query.lower():
         return query + " limit 1"
     else:
-        lidx = query.index("limit") + 6
+        lidx = query.lower().index("limit") + 6
         q = query[:lidx] + "1"
         return q
 
